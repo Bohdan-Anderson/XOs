@@ -1,0 +1,178 @@
+<html>
+<head>
+	<title></title>
+	<style type="text/css">
+	td{
+		width: 50px;
+		height: 50px;
+		text-align: center;
+		vertical-align: middle;
+	}
+	.bigTd{
+		width: 175px;
+		height: 175px;
+		text-align: center;
+		vertical-align: middle;
+	}
+
+	#player1{
+		background-color: #cff;
+	}
+	#player-1{
+		background-color: #ffc;
+	}
+
+	#p1{
+		border-color: #cff;
+		border-width: 2px;
+	}
+	#p2{
+		border-color: #ffc;
+		border-width: 2px;
+	}
+	</style>
+</head>
+<body><table><tr><td class="bigTd"><table border="1px"><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr></table></td><td class="bigTd"><table border="1px"><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr></table></td><td class="bigTd"><table border="1px"><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr></table></td></tr><tr><td class="bigTd"><table border="1px"><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr></table></td><td class="bigTd"><table border="1px"><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr></table></td><td class="bigTd"><table border="1px"><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr></table></td></tr><tr><td class="bigTd"><table border="1px"><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr></table></td><td class="bigTd"><table border="1px"><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr></table></td><td class="bigTd"><table border="1px"><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr></table></td></tr></table>
+	<script type="text/javascript" src="jquery.js"></script>
+
+	<script type="text/javascript">
+		var player = -1;
+
+		var fullRoot = document.body.firstChild.firstChild.childNodes;
+		var allTables = [];
+		$(fullRoot).data("hits",[
+			[[0][0][0]],
+			[[0][0][0]],
+			[[0][0][0]]])
+
+		for(var y = 0; y < 3; ++y){
+			var subRoot = fullRoot[y].childNodes
+			allTables[y] = [];
+			for(var x = 0; x < 3; ++x){
+				allTables[y].push(new SingleTable(subRoot[x].firstChild.firstChild,[y,x]));
+			}
+		}
+
+		function SingleTable(root,gXY){
+			var root = root;
+
+			this.won = function(){
+				if(root.id){
+					return root.id;
+				}
+			}
+
+			$(root).data("data",{"hits":[
+			[[0][0][0]],
+			[[0][0][0]],
+			[[0][0][0]]],"hitable":true,"location":gXY});
+
+			table = root.childNodes;
+			for(var y = 0; y < table.length; ++y){
+				var subTable = table[y].childNodes;
+				for(var x = 0; x < subTable.length; ++x){
+					$(subTable[x]).data("xy",[x,y]);
+					$(subTable[x]).click(function(){
+						var parent = this.parentNode.parentNode;
+						if($(parent).data()["data"]["hitable"]){
+							var xy = $(this).data()["xy"];
+							this.id = "player"+player;
+							$(this).unbind();
+							if(!parent.id){
+								$(parent).data()["data"]["hits"][xy[0]][xy[1]] = player;
+								var winning = checkWin($(parent).data()["data"]["hits"]);
+								if(winning){
+									parent.id=winning;
+									var pLoc = $(parent).data()["data"]["location"];
+									$(fullRoot).data()["hits"][pLoc[0]][pLoc[1]] = player;
+									var EndGame = checkWin($(fullRoot).data()["hits"]);
+									if(EndGame){
+										alert(EndGame + " has won the game, restart the page to restart");
+									}
+								}
+							}
+							switchBoards(xy);
+							switchTurns(xy);
+						}
+					});
+				}
+			}
+
+			this.nonClickalbe = function(){
+				$(root).data()["data"]["hitable"] = false;
+			}
+			this.clickable = function(){
+				$(root).data()["data"]["hitable"] = true;
+			}
+		}
+
+
+		function switchTurns(xy){
+			if(player == -1){
+				player = 1;
+			} else {
+				player = -1;
+			}
+		}
+
+		function switchBoards(xy){
+			console.log(xy , "in");
+			for(var y = 0; y < 3; ++y){
+				for(var x = 0; x < 3; ++x){
+					if(x == xy[0] && y == xy[1]){
+						console.log(x , y);
+						allTables[y][x].clickable();
+					} else {
+						allTables[y][x].nonClickalbe();
+					}
+				}
+			}
+		}
+
+		function clearAfterWinning(parent){
+			for(var y = 0; y < parent.length; ++y){
+				var subTable = parent[y].childNodes;
+				for(var x = 0; x < subTable.length; ++x){
+					$(subTable[x]).unbind();
+				}
+			}
+		}
+
+		function checkWin(table){
+			var sum = 0;
+			for(var x = 0; x < 3; ++x){
+				sum = 0;
+				for(var y = 0; y < 3; ++y){
+					sum += table[x][y];
+				}
+				if(sum >= 2) return ("p1");
+				if(sum <= -2) return ("p2");
+
+				sum = 0;
+				for(var y = 0; y < 3; ++y){
+					sum += table[y][x];
+				}
+				if(sum >= 2) return ("p1");
+				if(sum <= -2) return ("p2");
+			}
+
+			sum = 0;
+			for(var cross = 0; cross < 3; ++cross){
+				sum += table[cross][cross];
+			}
+			if(sum >= 2) return ("p1");
+			if(sum <= -2) return ("p2");
+
+			sum = 0;
+			for(var cross = 0; cross < 3; ++cross){
+				sum += table[cross][(2-cross)];
+			}
+			if(sum >= 2) return ("p1");
+			if(sum <= -2) return ("p2");
+
+			return false;
+		}
+
+	</script>
+</body>
+</html>
